@@ -1,0 +1,56 @@
+# ============================================================
+# ThreatWatch-SOC-Lab | Splunk Detection Rules
+# Author: Mohammed Shakir
+# Last Updated: March 2026
+# ============================================================
+# These are the SPL queries I built while running attack
+# simulations in my home lab. Tested against real Hydra
+# brute force and Nmap scans on Windows 10 target.
+# ============================================================
+
+
+# ------------------------------------------------------------
+# RULE 1: Brute Force Login Detection
+# ------------------------------------------------------------
+# Flags any source IP that fails login more than 5 times.
+# In my lab, Hydra triggered 1,720+ of these events.
+# Real world threshold depends on environment — tune as needed.
+# MITRE ATT&CK: T1110 — Brute Force | Credential Access
+# ------------------------------------------------------------
+
+index=main EventCode=4625
+| stats count by src_ip, user
+| where count > 5
+| sort -count
+
+
+# ------------------------------------------------------------
+# RULE 2: Suspicious Tool Execution
+# ------------------------------------------------------------
+# Detects if known attack tools are run on the target machine.
+# EventCode 4688 = new process created on Windows.
+# If an attacker lands on a machine and runs nmap or mimikatz
+# internally — this catches it.
+# MITRE ATT&CK: T1059 — Command Execution | Execution
+# ------------------------------------------------------------
+
+index=main EventCode=4688
+| search CommandLine="*nmap*" OR "*mimikatz*" OR "*hydra*"
+
+
+# ------------------------------------------------------------
+# RULE 3: Brute Force Followed by Successful Login
+# ------------------------------------------------------------
+# This is the scary one.
+# If the same IP that failed 5+ times later logs in
+# successfully — the brute force worked.
+# EventCode 4625 = failed login
+# EventCode 4624 = successful login
+# MITRE ATT&CK: T1110.001 — Password Guessing
+# ------------------------------------------------------------
+
+index=main (EventCode=4625 OR EventCode=4624)
+| stats count(eval(EventCode=4625)) as failures,
+  count(eval(EventCode=4624)) as success by src_ip
+| where failures > 5 AND success > 0
+| eval status="POSSIBLE BREACH — INVESTIGATE IMMEDIATELY"
