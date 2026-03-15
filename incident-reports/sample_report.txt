@@ -1,0 +1,105 @@
+============================================================
+     THREATWATCH-SOC-LAB | INCIDENT REPORT — IR-2026-001
+============================================================
+Analyst      : Mohammed Shakir
+Date         : 14 March 2026 | 11:59 PM
+Severity     : HIGH
+Status       : Documented
+============================================================
+
+WHAT HAPPENED
+------------------------------------------------------------
+While running my brute force simulation, Splunk started
+throwing 4625 events faster than I expected. Hydra was
+hammering the RDP port with rockyou.txt — 14 million
+passwords queued up. Windows was logging every single
+failed attempt in real time.
+
+That's when the alert fired.
+
+"Brute Force Detection" — the one I built earlier that day.
+Seeing it trigger on an actual attack I launched myself
+was honestly the most satisfying moment of this whole lab.
+
+------------------------------------------------------------
+INCIDENT DETAILS
+------------------------------------------------------------
+Event Type   : Brute Force — RDP (Remote Desktop Protocol)
+Source IP    : 192.168.148.130  (Kali Linux — Attacker)
+Target IP    : 192.168.148.131  (Windows 10 — Victim)
+Target Port  : 3389
+Tool Used    : Hydra v9.5 with rockyou.txt wordlist
+Alert Fired  : "Brute Force Detection" — Splunk SIEM
+Events Count : 1,720+ EventCode 4625 in under 10 minutes
+
+------------------------------------------------------------
+THREAT INTELLIGENCE
+------------------------------------------------------------
+After the alert fired, I ran the source IP through my
+AbuseIPDB script to simulate real SOC enrichment workflow.
+
+IP Checked   : 192.168.148.130
+Abuse Score  : 87% (simulated for lab purposes)
+Severity     : HIGH
+Checked Via  : AbuseIPDB API — automated Python script
+
+In a real environment this step tells you instantly:
+Is this a known bad actor? Has this IP attacked others?
+How confident are we this is malicious?
+
+------------------------------------------------------------
+MITRE ATT&CK MAPPING
+------------------------------------------------------------
+Tactic       : Credential Access
+Technique    : T1110 — Brute Force
+Sub-Technique: T1110.001 — Password Guessing
+
+This is one of the most common initial access techniques
+in real-world incidents. Recognizing it early — before
+a successful login — is exactly what L1 SOC analysts do.
+
+------------------------------------------------------------
+ATTACK TIMELINE
+------------------------------------------------------------
+13:36  Nmap SYN scan launched against lab network
+13:40  Hydra brute force started — RDP port 3389
+13:45  Splunk alert fired — "Brute Force Detection"
+13:50  EventCode 4625 count crossed 1,720 events
+13:59  AbuseIPDB threat intel checked via Python script
+13:59  Incident report generated and saved
+
+------------------------------------------------------------
+WHAT I DID ABOUT IT
+------------------------------------------------------------
+1. Confirmed alert in Splunk — reviewed raw 4625 events
+2. Identified source IP from logs
+3. Enriched IP via AbuseIPDB API — severity: HIGH
+4. Mapped to MITRE ATT&CK T1110
+5. Documented full incident timeline
+
+In a real SOC this would go to:
+→ L2 analyst if breach confirmed
+→ Network team to block source IP at firewall
+→ Incident response team if successful login detected
+
+------------------------------------------------------------
+ANALYST NOTES
+------------------------------------------------------------
+Biggest learning from this incident simulation:
+
+The attack was loud. 1,720 failed logins in minutes —
+any tuned SIEM would catch this immediately. Real attackers
+who know what they're doing go slow and low to avoid
+exactly this kind of detection.
+
+But for a fresher learning SOC fundamentals — seeing the
+full chain work (attack → log → alert → intel → report)
+in a live environment is irreplaceable.
+
+This is why I built the lab instead of just reading about it.
+
+============================================================
+Mohammed Shakir | Aspiring SOC Analyst
+ThreatWatch-SOC-Lab | March 2026
+github.com/MDSHAKIR02/ThreatWatch-SOC-Lab
+============================================================
